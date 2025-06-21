@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Commessa extends Model
 {
@@ -38,5 +39,15 @@ class Commessa extends Model
     public function cliente()
     {
         return $this->hasOneThrough(Cliente::class, Cantiere::class);
+    }
+
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class);
+    }
+
+    public function getTotaleOre()
+    {
+        return $this->reports()->sum('ore');
     }
 }

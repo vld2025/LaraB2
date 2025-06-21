@@ -104,9 +104,9 @@ class User extends Authenticatable
         return $giorni;
     }
 
-    public function canEditReport(Report $report): bool
+    public function canEditReport($report): bool
     {
-        // Admin e manager possono sempre modificare
+        // Admin e manager possono sempre modificare (tranne quelli fatturati)
         if ($this->hasRole(['admin', 'manager'])) {
             return !$report->fatturato;
         }

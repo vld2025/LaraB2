@@ -26,6 +26,8 @@ return [
     'invoice_settings' => 'Impostazioni Fattura',
     
     // Common Fields
+    'name' => 'Nome',
+    'code' => 'Codice',
     'date' => 'Data',
     'from' => 'Da',
     'to' => 'A',
@@ -37,47 +39,40 @@ return [
     'night' => 'Nott.',
     'trip' => 'Trasf.',
     'inv' => 'Fatt.',
-    'private_car' => 'Auto Privata',
-    'holiday' => 'Festivo',
-    'holiday_help' => 'Domenica o festivo Canton Ticino',
-    'night_work' => 'Lavoro Notturno',
-    'business_trip' => 'Trasferta',
-    'invoiced' => 'Fatturato',
-    'not_invoiced' => 'Non Fatturato',
-    
-    // Sections
-    'report_information' => 'Informazioni Report',
-    'details' => 'Dettagli',
-    
-    // Dashboard
-    'dashboard' => 'Dashboard',
-    'quick_actions' => 'Azioni Rapide',
-    'add_report' => 'Aggiungi Report',
-    'add_expense' => 'Aggiungi Spesa',
-    'add_extra_expense' => 'Aggiungi Spesa Extra',
-    'export_excel' => 'Esporta Excel',
-    
-    // Common Actions
     'active' => 'Attivo',
     'inactive' => 'Inattivo',
     'yes' => 'Sì',
     'no' => 'No',
-    'actions' => 'Azioni',
+    'notes' => 'Note',
+    'description' => 'Descrizione',
+    'amount' => 'Importo',
+    'type' => 'Tipo',
+    'email' => 'Email',
+    'phone' => 'Telefono',
     'created_at' => 'Creato il',
     'updated_at' => 'Aggiornato il',
-    'search' => 'Cerca',
-    'filter' => 'Filtra',
-    'create' => 'Crea',
-    'edit' => 'Modifica',
-    'delete' => 'Elimina',
-    'view' => 'Visualizza',
-    'save' => 'Salva',
-    'cancel' => 'Annulla',
-    'confirm' => 'Conferma',
-
-   // Client fields
-    'name' => 'Nome',
-    'code' => 'Codice',
+    
+    // User specific
+    'user_information' => 'Informazioni Utente',
+    'username' => 'Username',
+    'password' => 'Password',
+    'new_password_hint' => 'Nuova Password (lascia vuoto per non modificare)',
+    'role' => 'Ruolo',
+    'roles' => 'Ruoli',
+    'role_admin' => 'Amministratore',
+    'role_manager' => 'Manager',
+    'role_user' => 'Utente',
+    'clothing_sizes' => 'Taglie Abbigliamento',
+    'jacket_size' => 'Taglia Giacca',
+    'pants_size' => 'Taglia Pantaloni',
+    'shirt_size' => 'Taglia Maglietta',
+    'shoe_size' => 'Taglia Scarpe',
+    'clothing_notes' => 'Note Abbigliamento',
+    'contract_data' => 'Dati Contrattuali',
+    'weekly_hours' => 'Ore Settimanali',
+    'hourly_cost' => 'Costo Orario',
+    
+    // Client fields
     'tax_code' => 'Codice Fiscale',
     'vat_number' => 'Partita IVA',
     'general_information' => 'Informazioni Generali',
@@ -92,35 +87,40 @@ return [
     'germany' => 'Germania',
     'france' => 'Francia',
     'contacts' => 'Contatti',
-    'phone' => 'Telefono',
-    'email' => 'Email',
     'other' => 'Altro',
-    'notes' => 'Note',
-
-   // Construction site fields
+    
+    // Construction site fields
     'construction_site_information' => 'Informazioni Cantiere',
     'construction_site_name' => 'Nome Cantiere',
     'location' => 'Localizzazione',
-
-  // Order fields
+    
+    // Order fields
     'order_information' => 'Informazioni Commessa',
     'order_name' => 'Nome Commessa',
-    'description' => 'Descrizione',
     'start_date' => 'Data Inizio',
     'end_date' => 'Data Fine',
     'start' => 'Inizio',
     'budget' => 'Budget',
     'auto_generated' => 'Auto-generato',
     'with_reports' => 'Con Report',
-
-   // Expense fields
+    
+    // Report fields
+    'report_information' => 'Informazioni Report',
+    'details' => 'Dettagli',
+    'private_car' => 'Auto Privata',
+    'holiday' => 'Festivo',
+    'holiday_help' => 'Domenica o festivo Canton Ticino',
+    'night_work' => 'Lavoro Notturno',
+    'business_trip' => 'Trasferta',
+    'invoiced' => 'Fatturato',
+    'not_invoiced' => 'Non Fatturato',
+    
+    // Expense fields
     'expense_information' => 'Informazioni Spesa',
-    'type' => 'Tipo',
-    'amount' => 'Importo',
     'lunch' => 'Pranzo',
     'accommodation' => 'Pernottamento',
-
-   // Extra expense fields
+    
+    // Extra expense fields
     'receipt_photo' => 'Foto Scontrino',
     'upload_receipt_help' => 'Carica la foto dello scontrino (max 5MB)',
     'ai_analysis' => 'Analisi AI',
@@ -132,4 +132,42 @@ return [
     'photo' => 'Foto',
     'analyze_with_ai' => 'Analizza con AI',
     'ai_function_development' => 'Funzione AI in sviluppo',
+    
+    // Dashboard
+    'dashboard' => 'Dashboard',
+    'quick_actions' => 'Azioni Rapide',
+    'add_report' => 'Aggiungi Report',
+    'add_expense' => 'Aggiungi Spesa',
+    'add_extra_expense' => 'Aggiungi Spesa Extra',
+    'export_excel' => 'Esporta Excel',
+    
+    // Common Actions
+    'actions' => 'Azioni',
+    'search' => 'Cerca',
+    'filter' => 'Filtra',
+    'create' => 'Crea',
+    'edit' => 'Modifica',
+    'delete' => 'Elimina',
+    'view' => 'Visualizza',
+    'save' => 'Salva',
+    'cancel' => 'Annulla',
+    'confirm' => 'Conferma',
+
+   // Invoice settings
+    'invoice_setting' => 'Impostazione Fattura',
+    'default_settings' => 'Impostazioni Default',
+    'leave_empty_for_default' => 'Lascia vuoto per impostazioni di default',
+    'costs' => 'Costi',
+    'cost_per_km' => 'Costo al Km',
+    'lunch_cost' => 'Costo Pranzo',
+    'accommodation_cost' => 'Costo Pernottamento',
+    'invoicing' => 'Fatturazione',
+    'invoicing_day' => 'Giorno del Mese',
+    'invoicing_day_short' => 'Giorno Fatt.',
+    'invoicing_day_help' => 'Giorno del mese per la fatturazione automatica',
+    'recipient_email' => 'Email Destinatario',
+    'email_invoice_help' => 'Email dove inviare la fattura',
+    'automatic_sending' => 'Invio Automatico',
+    'automatic_sending_help' => 'Invia automaticamente la fattura via email',
+    'auto' => 'Auto',
 ];

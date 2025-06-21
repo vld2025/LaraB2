@@ -67,7 +67,9 @@ class ReportResource extends Resource
                                         ->first();
 
                                     if ($ultimoReport) {
-                                        $set('km', $ultimoReport->km);
+                                        // User vede sempre i suoi dati originali
+                                        $dati = $ultimoReport->getDataForUser();
+                                        $set('km', $dati['km'] ?? $ultimoReport->km);
                                     }
                                 }
                             }),
@@ -103,6 +105,35 @@ class ReportResource extends Resource
                             ->label(__('app.business_trip'))
                             ->default(false),
                     ])->columns(2),
+
+                // Sezione visibile solo ad admin/manager che mostra le differenze
+                Forms\Components\Section::make('Versioni Report')
+                    ->schema([
+                        Forms\Components\Placeholder::make('versione_originale')
+                            ->label('Versione Utente (Originale)')
+                            ->content(function ($record) {
+                                if (!$record) return 'N/A';
+                                $dati = $record->getDataForUser();
+                                return "Ore: {$dati['ore']} | Km: {$dati['km']} | Auto: " . 
+                                       ($dati['auto_privata'] ? 'Sì' : 'No') . 
+                                       " | Festivo: " . ($dati['festivo'] ? 'Sì' : 'No') . 
+                                       " | Notturno: " . ($dati['notturno'] ? 'Sì' : 'No') . 
+                                       " | Trasferta: " . ($dati['trasferta'] ? 'Sì' : 'No');
+                            }),
+                        Forms\Components\Placeholder::make('versione_manager')
+                            ->label('Versione Manager (Per Fatturazione)')
+                            ->content(function ($record) {
+                                if (!$record) return 'N/A';
+                                $dati = $record->getDataForManager();
+                                return "Ore: {$dati['ore']} | Km: {$dati['km']} | Auto: " . 
+                                       ($dati['auto_privata'] ? 'Sì' : 'No') . 
+                                       " | Festivo: " . ($dati['festivo'] ? 'Sì' : 'No') . 
+                                       " | Notturno: " . ($dati['notturno'] ? 'Sì' : 'No') . 
+                                       " | Trasferta: " . ($dati['trasferta'] ? 'Sì' : 'No');
+                            }),
+                    ])
+                    ->visible(fn () => Auth::user()->hasRole(['admin', 'manager']))
+                    ->collapsed(),
             ]);
     }
 
@@ -128,29 +159,82 @@ class ReportResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('ore')
+                Tables\Columns\TextColumn::make('ore_display')
                     ->label(__('app.hours'))
+                    ->getStateUsing(function (Report $record) {
+                        // Mostra i dati giusti in base al ruolo
+                        if (Auth::user()->hasRole(['admin', 'manager'])) {
+                            $dati = $record->getDataForManager();
+                            return $dati['ore'] ?? $record->ore;
+                        } else {
+                            $dati = $record->getDataForUser();
+                            return $dati['ore'] ?? $record->ore;
+                        }
+                    })
                     ->numeric()
                     ->sortable()
                     ->suffix(' h'),
-                Tables\Columns\TextColumn::make('km')
+                Tables\Columns\TextColumn::make('km_display')
                     ->label(__('app.km'))
+                    ->getStateUsing(function (Report $record) {
+                        // Mostra i dati giusti in base al ruolo
+                        if (Auth::user()->hasRole(['admin', 'manager'])) {
+                            $dati = $record->getDataForManager();
+                            return $dati['km'] ?? $record->km;
+                        } else {
+                            $dati = $record->getDataForUser();
+                            return $dati['km'] ?? $record->km;
+                        }
+                    })
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\IconColumn::make('auto_privata')
+                Tables\Columns\IconColumn::make('auto_privata_display')
                     ->label(__('app.car'))
+                    ->getStateUsing(function (Report $record) {
+                        if (Auth::user()->hasRole(['admin', 'manager'])) {
+                            $dati = $record->getDataForManager();
+                            return $dati['auto_privata'] ?? $record->auto_privata;
+                        } else {
+                            $dati = $record->getDataForUser();
+                            return $dati['auto_privata'] ?? $record->auto_privata;
+                        }
+                    })
                     ->boolean()
                     ->trueIcon('heroicon-o-check-circle')
                     ->falseIcon('heroicon-o-x-circle'),
-                Tables\Columns\IconColumn::make('festivo')
+                Tables\Columns\IconColumn::make('festivo_display')
                     ->label(__('app.hol'))
+                    ->getStateUsing(function (Report $record) {
+                        if (Auth::user()->hasRole(['admin', 'manager'])) {
+                            $dati = $record->getDataForManager();
+                            return $dati['festivo'] ?? $record->festivo;
+                        } else {
+                            $dati = $record->getDataForUser();
+                            return $dati['festivo'] ?? $record->festivo;
+                        }
+                    })
                     ->boolean(),
-                Tables\Columns\IconColumn::make('notturno')
-                    ->label(__('app.night'))
-                    ->boolean(),
-                Tables\Columns\IconColumn::make('trasferta')
+                Tables\Columns\IconColumn::make('trasferta_display')
                     ->label(__('app.trip'))
+                    ->getStateUsing(function (Report $record) {
+                        if (Auth::user()->hasRole(['admin', 'manager'])) {
+                            $dati = $record->getDataForManager();
+                            return $dati['trasferta'] ?? $record->trasferta;
+                        } else {
+                            $dati = $record->getDataForUser();
+                            return $dati['trasferta'] ?? $record->trasferta;
+                        }
+                    })
                     ->boolean(),
+                Tables\Columns\IconColumn::make('modified_by_manager')
+                    ->label('Modificato')
+                    ->getStateUsing(fn (Report $record) => $record->isModifiedByManager())
+                    ->boolean()
+                    ->trueIcon('heroicon-o-pencil-square')
+                    ->falseIcon('heroicon-o-check-circle')
+                    ->trueColor('warning')
+                    ->falseColor('success')
+                    ->visible(fn () => Auth::user()->hasRole(['admin', 'manager'])),
                 Tables\Columns\IconColumn::make('fatturato')
                     ->label(__('app.inv'))
                     ->boolean()
@@ -198,4 +282,65 @@ class ReportResource extends Resource
                         ->visible(fn () => Auth::user()->hasRole(['admin'])),
                 ]),
             ])
-            ->
+            ->defaultSort('data', 'desc')
+            ->modifyQueryUsing(function (Builder $query) {
+                if (!Auth::user()->hasRole(['admin', 'manager'])) {
+                    $query->where('user_id', Auth::id());
+                }
+            });
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListReports::route('/'),
+            'create' => Pages\CreateReport::route('/create'),
+            'edit' => Pages\EditReport::route('/{record}/edit'),
+        ];
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        $query = static::getModel()::query();
+
+        if (!Auth::user()->hasRole(['admin', 'manager'])) {
+            $query->where('user_id', Auth::id());
+        }
+
+        return $query->whereMonth('data', now()->month)
+                    ->whereYear('data', now()->year)
+                    ->count();
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return Auth::user()->canAccessPanel(filament()->getCurrentPanel());
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('app.work');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('app.reports');
+    }
+
+    public static function getPluralLabel(): ?string
+    {
+        return __('app.reports');
+    }
+
+    public static function getLabel(): ?string
+    {
+        return __('app.report');
+    }
+}

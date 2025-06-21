@@ -1,0 +1,8 @@
+// Rotte per impersonificazione (solo admin/manager)
+Route::middleware(['auth'])->group(function () {
+    Route::post('/impersonate/{user}', [App\Http\Controllers\ImpersonateController::class, 'start'])
+        ->name('impersonate.start')
+        ->middleware('role:admin|manager');
+    Route::delete('/impersonate', [App\Http\Controllers\ImpersonateController::class, 'stop'])
+        ->name('impersonate.stop');
+});
