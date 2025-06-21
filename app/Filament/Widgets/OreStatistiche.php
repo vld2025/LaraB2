@@ -14,7 +14,7 @@ class OreStatistiche extends BaseWidget
     protected function getStats(): array
     {
         $user = Auth::user();
-        
+
         // Se l'utente non è autenticato, ritorna array vuoto
         if (!$user) {
             return [];
@@ -31,12 +31,10 @@ class OreStatistiche extends BaseWidget
 
         $oreMese = 0;
         $kmMese = 0;
-
         foreach ($reports as $report) {
             // User vede sempre le sue statistiche basate sui dati originali
             $datiOriginali = $report->getDataForUser();
             $oreMese += $datiOriginali['ore'] ?? 0;
-            
             // Conta km solo se auto privata è true nei dati originali
             if ($datiOriginali['auto_privata'] ?? false) {
                 $kmMese += $datiOriginali['km'] ?? 0;
@@ -50,12 +48,8 @@ class OreStatistiche extends BaseWidget
         $differenza = $oreMese - $oreNormali;
         $differenzaFormattata = ($differenza >= 0 ? '+' : '') . number_format($differenza, 1);
 
-        // Calcola report non fatturati
-        $reportNonFatturati = Report::where('user_id', $user->id)
-            ->where('fatturato', false)
-            ->count();
-
-        return [
+        // Statistiche base per tutti
+        $stats = [
             Stat::make('Ore ' . now()->format('F'), number_format($oreMese, 1) . ' h')
                 ->description('Su ' . number_format($oreNormali, 0) . ' h previste')
                 ->descriptionIcon($differenza >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
@@ -69,12 +63,21 @@ class OreStatistiche extends BaseWidget
             Stat::make('Km Auto Privata', number_format($kmMese) . ' km')
                 ->description('Mese corrente (dati originali)')
                 ->icon('heroicon-o-truck'),
+        ];
 
-            Stat::make('Report da Fatturare', $reportNonFatturati)
+        // Solo admin e manager vedono "Report da Fatturare"
+        if ($user->hasRole(['admin', 'manager'])) {
+            $reportNonFatturati = Report::where('user_id', $user->id)
+                ->where('fatturato', false)
+                ->count();
+
+            $stats[] = Stat::make('Report da Fatturare', $reportNonFatturati)
                 ->description('In attesa')
                 ->color($reportNonFatturati > 0 ? 'warning' : 'success')
-                ->icon('heroicon-o-document-text'),
-        ];
+                ->icon('heroicon-o-document-text');
+        }
+
+        return $stats;
     }
 
     public static function canView(): bool
@@ -83,7 +86,6 @@ class OreStatistiche extends BaseWidget
         if (!$user) {
             return false;
         }
-        
         return $user->hasRole(['user', 'manager', 'admin']);
     }
 }

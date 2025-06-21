@@ -17,6 +17,11 @@ class ImpostazioniFatturaResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
     protected static ?int $navigationSort = 10;
 
+    public static function canViewAny(): bool
+    {
+        return auth()->user()->can('viewAny', ImpostazioniFattura::class);
+    }
+
     public static function form(Form $form): Form
     {
         return $form
