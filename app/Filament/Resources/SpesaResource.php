@@ -93,7 +93,7 @@ class SpesaResource extends Resource
                     ->label('Utente')
                     ->searchable()
                     ->sortable()
-                    ->visible(fn () => Auth::user()->hasRole(['admin', 'manager'])),
+                    ->visible(fn () => Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])),
 
                 Tables\Columns\TextColumn::make('tipo_file')
                     ->label('Tipo')
@@ -149,7 +149,7 @@ class SpesaResource extends Resource
                 Tables\Filters\SelectFilter::make('user_id')
                     ->label('Utente')
                     ->relationship('user', 'name')
-                    ->visible(fn () => Auth::user()->hasRole(['admin', 'manager'])),
+                    ->visible(fn () => Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])),
 
                 Tables\Filters\SelectFilter::make('mese')
                     ->label('Mese')
@@ -180,7 +180,7 @@ class SpesaResource extends Resource
                     ->label('📧 PDF Unificato + Email')
                     ->icon('heroicon-o-document-arrow-down')
                     ->color('success')
-                    ->visible(fn () => Auth::user()->hasRole('admin'))
+                    ->visible(fn () => Auth::user() && Auth::user() && Auth::user()->hasRole('admin'))
                     ->form([
                         Forms\Components\Select::make('mese_pdf')
                             ->label('Mese')
@@ -235,7 +235,7 @@ class SpesaResource extends Resource
                     ->label('⚙️ Automazione PDF')
                     ->icon('heroicon-o-clock')
                     ->color('warning')
-                    ->visible(fn () => Auth::user()->hasRole('admin'))
+                    ->visible(fn () => Auth::user() && Auth::user() && Auth::user()->hasRole('admin'))
                     ->form([
                         Forms\Components\Section::make('Configurazione Invio Automatico')
                             ->schema([
@@ -298,7 +298,7 @@ class SpesaResource extends Resource
             ])
             ->defaultSort('created_at', 'desc')
             ->modifyQueryUsing(function (Builder $query) {
-                if (!Auth::user()->hasRole(['admin', 'manager'])) {
+                if (!Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])) {
                     $query->where('user_id', Auth::id());
                 }
             });

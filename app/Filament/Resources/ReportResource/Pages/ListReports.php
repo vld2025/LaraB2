@@ -23,7 +23,7 @@ class ListReports extends ListRecords
                 ->action(function () {
                     return Excel::download(
                         new ReportsExport(
-                            auth()->user()->hasRole(['admin', 'manager']) ? null : auth()->id(),
+                            auth()->user() && auth()->user() && auth()->user()->hasRole(['admin', 'manager']) ? null : auth()->id(),
                             request()->get('tableFilters.data.data_da') ? \Carbon\Carbon::parse(request()->get('tableFilters.data.data_da'))->month : now()->month,
                             request()->get('tableFilters.data.data_da') ? \Carbon\Carbon::parse(request()->get('tableFilters.data.data_da'))->year : now()->year
                         ),

@@ -185,7 +185,7 @@ class UserResource extends Resource
 
     public static function canAccess(): bool
     {
-        return Auth::user()->hasRole(['admin', 'manager']);
+        return Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager']);
     }
 
     public static function getNavigationGroup(): ?string

@@ -29,7 +29,7 @@ class SpesaExtraResource extends Resource
                            ->label(__('app.user'))
                            ->relationship('user', 'name')
                            ->default(Auth::id())
-                           ->disabled(fn () => !Auth::user()->hasRole(['admin', 'manager']))
+                           ->disabled(fn () => !Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager']))
                            ->dehydrated()
                            ->required(),
                        Forms\Components\DatePicker::make('data')
@@ -42,7 +42,7 @@ class SpesaExtraResource extends Resource
                            ->options(function () {
                                $query = Commessa::with(['cantiere.cliente'])->where('attiva', true);
 
-                               if (!Auth::user()->hasRole(['admin', 'manager'])) {
+                               if (!Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])) {
                                    // User vede solo le commesse dove ha report
                                    $commesseIds = \App\Models\Report::where('user_id', Auth::id())
                                        ->distinct()
@@ -82,17 +82,17 @@ class SpesaExtraResource extends Resource
                            ->numeric()
                            ->prefix('CHF')
                            ->disabled()
-                           ->visible(fn () => Auth::user()->hasRole(['admin', 'manager'])),
+                           ->visible(fn () => Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])),
                        Forms\Components\Textarea::make('risposta_ai')
                            ->label(__('app.ai_response'))
                            ->rows(3)
                            ->disabled()
-                           ->visible(fn () => Auth::user()->hasRole(['admin', 'manager'])),
+                           ->visible(fn () => Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])),
                        Forms\Components\Toggle::make('verificato')
                            ->label(__('app.verified'))
                            ->helperText(__('app.confirm_amount_correct'))
-                           ->visible(fn () => Auth::user()->hasRole(['admin', 'manager'])),
-                   ])->visible(fn () => Auth::user()->hasRole(['admin', 'manager'])),
+                           ->visible(fn () => Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])),
+                   ])->visible(fn () => Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])),
            ]);
    }
 
@@ -108,7 +108,7 @@ class SpesaExtraResource extends Resource
                    ->label(__('app.user'))
                    ->sortable()
                    ->searchable()
-                   ->visible(fn () => Auth::user()->hasRole(['admin', 'manager'])),
+                   ->visible(fn () => Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])),
                Tables\Columns\TextColumn::make('commessa.nome')
                    ->label(__('app.order'))
                    ->searchable()
@@ -129,7 +129,7 @@ class SpesaExtraResource extends Resource
                Tables\Columns\IconColumn::make('verificato')
                    ->label(__('app.verif'))
                    ->boolean()
-                   ->visible(fn () => Auth::user()->hasRole(['admin', 'manager'])),
+                   ->visible(fn () => Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])),
                Tables\Columns\IconColumn::make('fatturato')
                    ->label(__('app.inv'))
                    ->boolean()
@@ -139,7 +139,7 @@ class SpesaExtraResource extends Resource
                Tables\Filters\SelectFilter::make('user_id')
                    ->label(__('app.user'))
                    ->relationship('user', 'name')
-                   ->visible(fn () => Auth::user()->hasRole(['admin', 'manager'])),
+                   ->visible(fn () => Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])),
                Tables\Filters\SelectFilter::make('commessa_id')
                    ->label(__('app.order'))
                    ->relationship('commessa', 'nome')
@@ -147,7 +147,7 @@ class SpesaExtraResource extends Resource
                    ->preload(),
                Tables\Filters\TernaryFilter::make('verificato')
                    ->label(__('app.verified'))
-                   ->visible(fn () => Auth::user()->hasRole(['admin', 'manager'])),
+                   ->visible(fn () => Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])),
                Tables\Filters\TernaryFilter::make('fatturato')
                    ->label(__('app.invoiced')),
                Tables\Filters\Filter::make('data')
@@ -172,13 +172,13 @@ class SpesaExtraResource extends Resource
            ->actions([
                Tables\Actions\EditAction::make()
                    ->visible(fn (SpesaExtra $record) => !$record->fatturato &&
-                       (Auth::user()->hasRole(['admin', 'manager']) || $record->user_id === Auth::id())),
+                       (Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager']) || $record->user_id === Auth::id())),
                Tables\Actions\ViewAction::make(),
                Tables\Actions\Action::make('analizzaAI')
                    ->label(__('app.analyze_with_ai'))
                    ->icon('heroicon-o-cpu-chip')
                    ->color('warning')
-                   ->visible(fn (SpesaExtra $record) => $record->foto_path && !$record->importo_ai && Auth::user()->hasRole(['admin', 'manager']))
+                   ->visible(fn (SpesaExtra $record) => $record->foto_path && !$record->importo_ai && Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager']))
                    ->action(function (SpesaExtra $record) {
                        // TODO: Implementare analisi AI
                        \Filament\Notifications\Notification::make()
@@ -188,18 +188,18 @@ class SpesaExtraResource extends Resource
                    }),
                Tables\Actions\DeleteAction::make()
                    ->visible(fn (SpesaExtra $record) => !$record->fatturato && 
-                       (Auth::user()->hasRole(['admin']) || 
+                       (Auth::user() && Auth::user() && Auth::user()->hasRole(['admin']) || 
                         (!$record->fatturato && $record->user_id === Auth::id()))),
            ])
            ->bulkActions([
                Tables\Actions\BulkActionGroup::make([
                    Tables\Actions\DeleteBulkAction::make()
-                       ->visible(fn () => Auth::user()->hasRole(['admin'])),
+                       ->visible(fn () => Auth::user() && Auth::user() && Auth::user()->hasRole(['admin'])),
                ]),
            ])
            ->defaultSort('data', 'desc')
            ->modifyQueryUsing(function (Builder $query) {
-               if (!Auth::user()->hasRole(['admin', 'manager'])) {
+               if (!Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])) {
                    $query->where('user_id', Auth::id());
                }
            });
@@ -225,7 +225,7 @@ class SpesaExtraResource extends Resource
    {
        $query = static::getModel()::query();
 
-       if (!Auth::user()->hasRole(['admin', 'manager'])) {
+       if (!Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])) {
            $query->where('user_id', Auth::id());
        }
 

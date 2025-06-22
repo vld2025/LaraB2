@@ -19,7 +19,7 @@ class ImpostazioniFatturaResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()->can('viewAny', ImpostazioniFattura::class);
+        return auth()->user() ? auth()->user() ? auth()->user()->can('viewAny', ImpostazioniFattura::class) : false : false;
     }
 
     public static function form(Form $form): Form
@@ -141,7 +141,7 @@ class ImpostazioniFatturaResource extends Resource
     
     public static function canAccess(): bool
     {
-        return Auth::user()->hasRole(['admin', 'manager']);
+        return Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager']);
     }
 
     public static function getNavigationGroup(): ?string

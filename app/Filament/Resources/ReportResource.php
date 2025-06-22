@@ -29,7 +29,7 @@ class ReportResource extends Resource
                             ->label(__('app.user'))
                             ->relationship('user', 'name')
                             ->default(Auth::id())
-                            ->disabled(fn () => !Auth::user()->hasRole(['admin', 'manager']))
+                            ->disabled(fn () => !Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager']))
                             ->dehydrated()
                             ->required(),
                         Forms\Components\DatePicker::make('data')
@@ -42,7 +42,7 @@ class ReportResource extends Resource
                             ->options(function () {
                                 $query = Commessa::with(['cantiere.cliente'])->where('attiva', true);
 
-                                if (!Auth::user()->hasRole(['admin', 'manager'])) {
+                                if (!Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])) {
                                     // User vede solo le sue commesse recenti
                                     $commesseIds = Report::where('user_id', Auth::id())
                                         ->distinct()
@@ -132,7 +132,7 @@ class ReportResource extends Resource
                                        " | Trasferta: " . ($dati['trasferta'] ? 'Sì' : 'No');
                             }),
                     ])
-                    ->visible(fn () => Auth::user()->hasRole(['admin', 'manager']))
+                    ->visible(fn () => Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager']))
                     ->collapsed(),
             ]);
     }
@@ -149,7 +149,7 @@ class ReportResource extends Resource
                     ->label(__('app.user'))
                     ->sortable()
                     ->searchable()
-                    ->visible(fn () => Auth::user()->hasRole(['admin', 'manager'])),
+                    ->visible(fn () => Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])),
                 Tables\Columns\TextColumn::make('commessa.nome')
                     ->label(__('app.order'))
                     ->searchable()
@@ -163,7 +163,7 @@ class ReportResource extends Resource
                     ->label(__('app.hours'))
                     ->getStateUsing(function (Report $record) {
                         // Mostra i dati giusti in base al ruolo
-                        if (Auth::user()->hasRole(['admin', 'manager'])) {
+                        if (Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])) {
                             $dati = $record->getDataForManager();
                             return $dati['ore'] ?? $record->ore;
                         } else {
@@ -178,7 +178,7 @@ class ReportResource extends Resource
                     ->label(__('app.km'))
                     ->getStateUsing(function (Report $record) {
                         // Mostra i dati giusti in base al ruolo
-                        if (Auth::user()->hasRole(['admin', 'manager'])) {
+                        if (Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])) {
                             $dati = $record->getDataForManager();
                             return $dati['km'] ?? $record->km;
                         } else {
@@ -191,7 +191,7 @@ class ReportResource extends Resource
                 Tables\Columns\IconColumn::make('auto_privata_display')
                     ->label(__('app.car'))
                     ->getStateUsing(function (Report $record) {
-                        if (Auth::user()->hasRole(['admin', 'manager'])) {
+                        if (Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])) {
                             $dati = $record->getDataForManager();
                             return $dati['auto_privata'] ?? $record->auto_privata;
                         } else {
@@ -205,7 +205,7 @@ class ReportResource extends Resource
                 Tables\Columns\IconColumn::make('festivo_display')
                     ->label(__('app.hol'))
                     ->getStateUsing(function (Report $record) {
-                        if (Auth::user()->hasRole(['admin', 'manager'])) {
+                        if (Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])) {
                             $dati = $record->getDataForManager();
                             return $dati['festivo'] ?? $record->festivo;
                         } else {
@@ -217,7 +217,7 @@ class ReportResource extends Resource
                 Tables\Columns\IconColumn::make('trasferta_display')
                     ->label(__('app.trip'))
                     ->getStateUsing(function (Report $record) {
-                        if (Auth::user()->hasRole(['admin', 'manager'])) {
+                        if (Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])) {
                             $dati = $record->getDataForManager();
                             return $dati['trasferta'] ?? $record->trasferta;
                         } else {
@@ -234,7 +234,7 @@ class ReportResource extends Resource
                     ->falseIcon('heroicon-o-check-circle')
                     ->trueColor('warning')
                     ->falseColor('success')
-                    ->visible(fn () => Auth::user()->hasRole(['admin', 'manager'])),
+                    ->visible(fn () => Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])),
                 Tables\Columns\IconColumn::make('fatturato')
                     ->label(__('app.inv'))
                     ->boolean()
@@ -244,7 +244,7 @@ class ReportResource extends Resource
                 Tables\Filters\SelectFilter::make('user_id')
                     ->label(__('app.user'))
                     ->relationship('user', 'name')
-                    ->visible(fn () => Auth::user()->hasRole(['admin', 'manager'])),
+                    ->visible(fn () => Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])),
                 Tables\Filters\SelectFilter::make('commessa_id')
                     ->label(__('app.order'))
                     ->relationship('commessa', 'nome')
@@ -273,18 +273,18 @@ class ReportResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make()
-                    ->visible(fn (Report $record) => Auth::user()->canEditReport($record)),
+                    ->visible(fn (Report $record) => Auth::user() ? Auth::user() ? Auth::user()->canEditReport($record) : false : false),
                 Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
-                        ->visible(fn () => Auth::user()->hasRole(['admin'])),
+                        ->visible(fn () => Auth::user() && Auth::user() && Auth::user()->hasRole(['admin'])),
                 ]),
             ])
             ->defaultSort('data', 'desc')
             ->modifyQueryUsing(function (Builder $query) {
-                if (!Auth::user()->hasRole(['admin', 'manager'])) {
+                if (!Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])) {
                     $query->where('user_id', Auth::id());
                 }
             });
@@ -310,7 +310,7 @@ class ReportResource extends Resource
     {
         $query = static::getModel()::query();
 
-        if (!Auth::user()->hasRole(['admin', 'manager'])) {
+        if (!Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager'])) {
             $query->where('user_id', Auth::id());
         }
 
@@ -321,7 +321,7 @@ class ReportResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Auth::user()->canAccessPanel(filament()->getCurrentPanel());
+        return Auth::user() ? Auth::user() ? Auth::user()->canAccessPanel(filament()->getCurrentPanel()) : false : false;
     }
 
     public static function getNavigationGroup(): ?string

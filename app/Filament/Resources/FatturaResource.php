@@ -291,6 +291,6 @@ class FatturaResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Auth::user()->hasRole(['admin', 'manager']);
+        return Auth::user() && Auth::user() && Auth::user()->hasRole(['admin', 'manager']);
     }
 }

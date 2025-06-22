@@ -77,3 +77,7 @@ Route::get('/api/server-time', function () {
         'timezone' => config('app.timezone')
     ]);
 });
+
+Route::get('/test', function() {
+    return 'Test OK - PHP funziona';
+});
