@@ -72,11 +72,11 @@ class Fattura extends Model
     // Metodi helper
     public function calcolaImporti(): void
     {
-        $this->subtotale = $this->importo_manodopera + 
-                          $this->importo_trasferte + 
-                          $this->importo_km + 
+        $this->subtotale = $this->importo_manodopera +
+                          $this->importo_trasferte +
+                          $this->importo_km +
                           $this->importo_spese_extra;
-        
+
         $this->totale_pre_iva = $this->subtotale - $this->sconto;
         $this->importo_iva = $this->totale_pre_iva * ($this->aliquota_iva / 100);
         $this->totale_finale = $this->totale_pre_iva + $this->importo_iva;
@@ -85,15 +85,20 @@ class Fattura extends Model
     public function generaNumeroFattura(): string
     {
         $ultimaFattura = self::where('anno', $this->anno)
-                            ->orderBy('numero_fattura', 'desc')
+                            ->orderBy('id', 'desc')
                             ->first();
-        
-        if ($ultimaFattura) {
-            $numero = intval(explode('-', $ultimaFattura->numero_fattura)[1]) + 1;
+
+        if ($ultimaFattura && $ultimaFattura->numero_fattura) {
+            // Cerca l'ultimo numero dalla fattura esistente
+            if (preg_match('/(\d+)-(\d+)$/', $ultimaFattura->numero_fattura, $matches)) {
+                $numero = intval($matches[1]) + 1;
+            } else {
+                $numero = 1;
+            }
         } else {
             $numero = 1;
         }
-        
-        return "FATTURA {$numero}-{$this->anno}";
+
+        return "VLD-{$numero}-{$this->anno}";
     }
 }

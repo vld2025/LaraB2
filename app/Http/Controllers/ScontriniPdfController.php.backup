@@ -1,0 +1,163 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Spesa;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Intervention\Image\Facades\Image;
+use Carbon\Carbon;
+
+class ScontriniPdfController extends Controller
+{
+    public function generaPdfTuttiScontrini(Request $request)
+    {
+        if (!auth()->user()->hasRole('Admin')) {
+            abort(403, 'Non autorizzato');
+        }
+
+        $mese = $request->input('mese', now()->month);
+        $anno = $request->input('anno', now()->year);
+
+        $spese = Spesa::with(['user', 'report'])
+            ->whereMonth('data_spesa', $mese)
+            ->whereYear('data_spesa', $anno)
+            ->whereNotNull('scontrino_path')
+            ->orderBy('data_spesa')
+            ->orderBy('user_id')
+            ->get();
+
+        if ($spese->isEmpty()) {
+            return redirect()->back()->with('error', 'Nessuno scontrino trovato per il periodo selezionato.');
+        }
+
+        $datiPdf = $this->preparaDatiConImmagini($spese, $mese, $anno);
+
+        $pdf = Pdf::loadView('pdf.scontrini-tutti', $datiPdf)
+            ->setPaper('a4', 'portrait')
+            ->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+                'chroot' => storage_path('app/public'),
+                'dpi' => 150,
+                'defaultFont' => 'DejaVu Sans'
+            ]);
+
+        $nomeFile = "scontrini_tutti_{$anno}_{$mese}.pdf";
+        return $pdf->download($nomeFile);
+    }
+
+    private function preparaDatiConImmagini($spese, $mese, $anno)
+    {
+        $speseConImmagini = [];
+        
+        foreach ($spese as $spesa) {
+            $immaginePdf = $this->convertiImmaginePerPdf($spesa->scontrino_path);
+            
+            $speseConImmagini[] = [
+                'id' => $spesa->id,
+                'data_spesa' => $spesa->data_spesa,
+                'descrizione' => $spesa->descrizione,
+                'importo' => $spesa->importo,
+                'user_name' => $spesa->user->name,
+                'user_email' => $spesa->user->email,
+                'report_numero' => $spesa->report->numero_report ?? 'N/A',
+                'scontrino_path' => $spesa->scontrino_path,
+                'immagine_base64' => $immaginePdf['base64'],
+                'mime_type' => $immaginePdf['mime']
+            ];
+        }
+
+        return [
+            'spese' => $speseConImmagini,
+            'mese' => $mese,
+            'anno' => $anno,
+            'mese_nome' => Carbon::create($anno, $mese, 1)->locale('it')->monthName,
+            'totale_spese' => $spese->sum('importo'),
+            'numero_scontrini' => $spese->count(),
+            'data_generazione' => now()->format('d/m/Y H:i')
+        ];
+    }
+
+    private function convertiImmaginePerPdf($path)
+    {
+        try {
+            $pathCompleto = storage_path('app/public/' . $path);
+            
+            if (!file_exists($pathCompleto)) {
+                return $this->immagineDefault();
+            }
+
+            $estensione = strtolower(pathinfo($pathCompleto, PATHINFO_EXTENSION));
+            
+            if ($estensione === 'pdf') {
+                return $this->convertiPdfInImmagine($pathCompleto);
+            }
+
+            if (in_array($estensione, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
+                return $this->ottimizzaImmaginePerPdf($pathCompleto);
+            }
+
+            return $this->immagineDefault();
+
+        } catch (\Exception $e) {
+            \Log::error('Errore conversione immagine: ' . $e->getMessage());
+            return $this->immagineDefault();
+        }
+    }
+
+    private function ottimizzaImmaginePerPdf($pathCompleto)
+    {
+        try {
+            $image = Image::make($pathCompleto);
+            $image->resize(600, null, function ($constraint) {
+                $constraint->aspectRatio();
+                $constraint->upsize();
+            });
+            $image->encode('jpg', 80);
+            
+            return [
+                'base64' => base64_encode($image->__toString()),
+                'mime' => 'image/jpeg'
+            ];
+
+        } catch (\Exception $e) {
+            return $this->immagineDefault();
+        }
+    }
+
+    private function convertiPdfInImmagine($pathPdf)
+    {
+        try {
+            if (extension_loaded('imagick')) {
+                $imagick = new \Imagick();
+                $imagick->setResolution(150, 150);
+                $imagick->readImage($pathPdf . '[0]');
+                $imagick->setImageFormat('jpeg');
+                $imagick->setImageCompressionQuality(80);
+                
+                if ($imagick->getImageWidth() > 600) {
+                    $imagick->resizeImage(600, 0, \Imagick::FILTER_LANCZOS, 1);
+                }
+                
+                return [
+                    'base64' => base64_encode($imagick->getImageBlob()),
+                    'mime' => 'image/jpeg'
+                ];
+            }
+            return $this->immagineDefault();
+
+        } catch (\Exception $e) {
+            return $this->immagineDefault();
+        }
+    }
+
+    private function immagineDefault()
+    {
+        return [
+            'base64' => 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+            'mime' => 'image/png'
+        ];
+    }
+}

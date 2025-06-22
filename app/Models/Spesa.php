@@ -14,21 +14,35 @@ class Spesa extends Model
 
     protected $fillable = [
         'user_id',
+        'mese',
+        'anno',
+        'foto_scontrino',
+        'note',
+        // Campi vecchi opzionali
         'report_id',
         'data',
         'tipo',
         'importo',
-        'note',
         'fatturato',
         'data_fatturazione',
         'numero_fattura',
     ];
 
+    protected $attributes = [
+        'report_id' => null,
+        'data' => null,
+        'tipo' => null,
+        'importo' => null,
+        'fatturato' => false,
+    ];
+
     protected $casts = [
         'data' => 'date',
+        'data_fatturazione' => 'date',
         'importo' => 'decimal:2',
         'fatturato' => 'boolean',
-        'data_fatturazione' => 'date',
+        'mese' => 'integer',
+        'anno' => 'integer',
     ];
 
     public function user(): BelongsTo
@@ -41,28 +55,18 @@ class Spesa extends Model
         return $this->belongsTo(Report::class);
     }
 
-    public function scopeNonFatturate($query)
-    {
-        return $query->where('fatturato', false);
-    }
-
-    public function scopeFatturate($query)
-    {
-        return $query->where('fatturato', true);
-    }
-
+    // Scope per filtrare per mese/anno
     public function scopeDelMese($query, $mese, $anno)
     {
-        return $query->whereMonth('data', $mese)->whereYear('data', $anno);
+        return $query->where('mese', $mese)->where('anno', $anno);
     }
 
-    public function scopePranzi($query)
+    // Helper per ottenere il nome del file
+    public function getNomeFileAttribute()
     {
-        return $query->where('tipo', 'pranzo');
-    }
-
-    public function scopePernottamenti($query)
-    {
-        return $query->where('tipo', 'pernottamento');
+        if (!$this->foto_scontrino) {
+            return null;
+        }
+        return basename($this->foto_scontrino);
     }
 }

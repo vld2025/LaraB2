@@ -9,11 +9,4 @@ use Filament\Resources\Pages\EditRecord;
 class EditSpesa extends EditRecord
 {
     protected static string $resource = SpesaResource::class;
-
-    protected function getHeaderActions(): array
-    {
-        return [
-            Actions\DeleteAction::make(),
-        ];
-    }
 }

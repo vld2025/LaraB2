@@ -25,10 +25,10 @@ class Commessa extends Model
     ];
 
     protected $casts = [
-        'attiva' => 'boolean',
         'data_inizio' => 'date',
         'data_fine' => 'date',
         'budget' => 'decimal:2',
+        'attiva' => 'boolean',
     ];
 
     public function cantiere(): BelongsTo
@@ -38,7 +38,7 @@ class Commessa extends Model
 
     public function cliente()
     {
-        return $this->hasOneThrough(Cliente::class, Cantiere::class);
+        return $this->cantiere->cliente ?? null;
     }
 
     public function reports(): HasMany
@@ -48,6 +48,11 @@ class Commessa extends Model
 
     public function getTotaleOre()
     {
-        return $this->reports()->sum('ore');
+        return $this->reports->sum('ore');
+    }
+
+    public function getTotaleKm()
+    {
+        return $this->reports->sum('km');
     }
 }

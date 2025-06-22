@@ -23,10 +23,32 @@ class GeneraFatture extends Command
 
         $this->info("Generazione fatture per {$mese}/{$anno}");
 
-        // Verifica se esistono già fatture per questo periodo
-        if (!$force && Fattura::where('mese', $mese)->where('anno', $anno)->exists()) {
-            $this->error("Fatture per {$mese}/{$anno} già esistenti. Usa --force per rigenerare.");
-            return 1;
+        // Se --force, cancella fatture esistenti
+        if ($force) {
+            $fattureEsistenti = Fattura::where('mese', $mese)->where('anno', $anno)->count();
+            if ($fattureEsistenti > 0) {
+                $this->info("Cancellando {$fattureEsistenti} fatture esistenti...");
+                
+                // Resetta i report fatturati
+                Report::where('fatturato', true)
+                    ->whereMonth('data', $mese)
+                    ->whereYear('data', $anno)
+                    ->update([
+                        'fatturato' => false,
+                        'fattura_id' => null,
+                        'data_fatturazione' => null,
+                        'numero_fattura' => null
+                    ]);
+                
+                // Cancella le fatture
+                Fattura::where('mese', $mese)->where('anno', $anno)->delete();
+            }
+        } else {
+            // Verifica se esistono già fatture per questo periodo
+            if (Fattura::where('mese', $mese)->where('anno', $anno)->exists()) {
+                $this->error("Fatture per {$mese}/{$anno} già esistenti. Usa --force per rigenerare.");
+                return 1;
+            }
         }
 
         // Ottieni impostazioni fatturazione
@@ -37,9 +59,10 @@ class GeneraFatture extends Command
         }
 
         // Ottieni report non fatturati del periodo
-        $reports = Report::nonFatturati()
-            ->delMese($mese, $anno)
-            ->with(['user', 'commessa.cliente', 'spese'])
+        $reports = Report::where('fatturato', false)
+            ->whereMonth('data', $mese)
+            ->whereYear('data', $anno)
+            ->with(['user', 'commessa.cantiere.cliente', 'spese'])
             ->get();
 
         if ($reports->isEmpty()) {
@@ -48,13 +71,15 @@ class GeneraFatture extends Command
         }
 
         // Raggruppa per cliente
-        $reportPerCliente = $reports->groupBy('commessa.cliente_id');
+        $reportPerCliente = $reports->groupBy(function($report) {
+            return $report->commessa->cantiere->cliente->id;
+        });
 
         $fattureCreate = 0;
 
         DB::transaction(function () use ($reportPerCliente, $mese, $anno, $impostazioni, &$fattureCreate) {
             foreach ($reportPerCliente as $clienteId => $reportsCliente) {
-                $cliente = $reportsCliente->first()->commessa->cliente;
+                $cliente = $reportsCliente->first()->commessa->cantiere->cliente;
 
                 $this->info("Generando fattura per: {$cliente->nome}");
 
@@ -95,7 +120,7 @@ class GeneraFatture extends Command
         $ore_totali = 0;
         $km_totali = 0;
         $giorni_trasferta = 0;
-        
+
         foreach ($reports as $report) {
             $datiBilling = $report->getDataForBilling();
             $ore_totali += $datiBilling['ore'] ?? 0;
@@ -111,15 +136,15 @@ class GeneraFatture extends Command
             $spese_extra += $report->spese->sum('importo');
         }
 
-        // Calcola importi usando i dati corretti per la fatturazione
+        // Calcola importi
         $fattura->ore_totali = $ore_totali;
-        $fattura->importo_manodopera = $ore_totali * $impostazioni->tariffa_oraria;
+        $fattura->importo_manodopera = $ore_totali * $impostazioni->costo_orario;
 
         $fattura->giorni_trasferta = $giorni_trasferta;
-        $fattura->importo_trasferte = $giorni_trasferta * $impostazioni->tariffa_trasferta;
+        $fattura->importo_trasferte = $giorni_trasferta * $impostazioni->costo_pranzo;
 
         $fattura->km_totali = $km_totali;
-        $fattura->importo_km = $km_totali * $impostazioni->tariffa_km;
+        $fattura->importo_km = $km_totali * $impostazioni->costo_km;
 
         $fattura->importo_spese_extra = $spese_extra;
 

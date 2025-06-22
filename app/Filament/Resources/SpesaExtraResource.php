@@ -251,4 +251,9 @@ class SpesaExtraResource extends Resource
     {
         return __('app.extra_expense');
     }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return Auth::user()->hasRole(['admin', 'manager']);
+    }
 }
