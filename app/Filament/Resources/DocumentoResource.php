@@ -20,6 +20,11 @@ class DocumentoResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-folder-open';
     protected static ?string $navigationLabel = 'Documenti';
     protected static ?int $navigationSort = 4;
+    
+    // Forza il nome corretto senza pluralizzazione automatica
+    protected static ?string $slug = 'documenti';
+    protected static ?string $pluralModelLabel = 'Documenti';
+    protected static ?string $modelLabel = 'Documento';
 
     // ✅ NASCONDI PER USER NORMALI - SOLO PER ADMIN/MANAGER
     public static function canAccess(): bool
@@ -155,13 +160,13 @@ class DocumentoResource extends Resource
                 Tables\Actions\EditAction::make()
                     ->visible(function ($record) use ($isManager) {
                         if ($isManager) return true;
-                        return $record->categoria->tipo_accesso === 'user_upload' && 
+                        return $record->categoria->tipo_accesso === 'user_upload' &&
                                $record->documentabile_id === auth()->id();
                     }),
                 Tables\Actions\DeleteAction::make()
                     ->visible(function ($record) use ($isManager) {
                         if ($isManager) return true;
-                        return $record->categoria->tipo_accesso === 'user_upload' && 
+                        return $record->categoria->tipo_accesso === 'user_upload' &&
                                $record->documentabile_id === auth()->id();
                     }),
                 Tables\Actions\Action::make('scarica')
@@ -178,7 +183,7 @@ class DocumentoResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListDocumentos::route('/'),
+            'index' => Pages\ListDocumenti::route('/'),
             'create' => Pages\CreateDocumento::route('/create'),
             'view' => Pages\ViewDocumento::route('/{record}'),
             'edit' => Pages\EditDocumento::route('/{record}/edit'),
