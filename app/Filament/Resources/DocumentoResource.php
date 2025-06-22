@@ -41,6 +41,7 @@ class DocumentoResource extends Resource
                                 return CategoriaDocumento::attive()
                                     ->accessibili()
                                     ->when(!$isManager, function ($query) {
+                                        // User può selezionare solo categorie user_upload
                                         return $query->where('tipo_accesso', 'user_upload');
                                     })
                                     ->pluck('nome', 'id');
@@ -228,18 +229,39 @@ class DocumentoResource extends Resource
                         }
                     }),
                     
+                Tables\Actions\ViewAction::make()
+                    ->label('Visualizza'),
+                    
                 Tables\Actions\EditAction::make()
                     ->visible(function ($record) {
                         $user = auth()->user();
-                        return $user->hasRole(['manager', 'admin']) || 
-                               ($record->caricato_da === $user->id && $record->categoria->canUpload());
+                        
+                        // Manager/Admin possono sempre modificare
+                        if ($user->hasRole(['manager', 'admin'])) {
+                            return true;
+                        }
+                        
+                        // User può modificare SOLO se:
+                        // 1. È il creatore del documento
+                        // 2. La categoria permette upload agli user (documenti personali)
+                        return $record->caricato_da === $user->id && 
+                               $record->categoria->tipo_accesso === 'user_upload';
                     }),
                     
                 Tables\Actions\DeleteAction::make()
                     ->visible(function ($record) {
                         $user = auth()->user();
-                        return $user->hasRole(['manager', 'admin']) || 
-                               ($record->caricato_da === $user->id && $record->categoria->canUpload());
+                        
+                        // Manager/Admin possono sempre eliminare
+                        if ($user->hasRole(['manager', 'admin'])) {
+                            return true;
+                        }
+                        
+                        // User può eliminare SOLO se:
+                        // 1. È il creatore del documento
+                        // 2. La categoria permette upload agli user (documenti personali)
+                        return $record->caricato_da === $user->id && 
+                               $record->categoria->tipo_accesso === 'user_upload';
                     }),
             ])
             ->bulkActions([
@@ -265,6 +287,7 @@ class DocumentoResource extends Resource
             'index' => Pages\ListDocumentos::route('/'),
             'create' => Pages\CreateDocumento::route('/create'),
             'edit' => Pages\EditDocumento::route('/{record}/edit'),
+            'view' => Pages\ViewDocumento::route('/{record}'),
         ];
     }
 
@@ -276,10 +299,29 @@ class DocumentoResource extends Resource
             return true;
         }
         
-        // User può creare solo se esistono categorie user_upload
+        // User può creare solo se esistono categorie user_upload attive
         return CategoriaDocumento::where('tipo_accesso', 'user_upload')
             ->where('attiva', true)
             ->exists();
+    }
+
+    // Policy per edit e delete - override a livello di record
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        $user = auth()->user();
+        
+        if ($user->hasRole(['manager', 'admin'])) {
+            return true;
+        }
+        
+        // User può modificare solo documenti personali che ha caricato
+        return $record->caricato_da === $user->id && 
+               $record->categoria->tipo_accesso === 'user_upload';
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return static::canEdit($record);
     }
 
     public static function getNavigationBadge(): ?string
