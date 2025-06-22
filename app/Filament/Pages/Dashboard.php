@@ -3,36 +3,31 @@
 namespace App\Filament\Pages;
 
 use Filament\Pages\Dashboard as BaseDashboard;
-use Illuminate\Support\Facades\Auth;
 
 class Dashboard extends BaseDashboard
 {
-    public function getWidgets(): array
-    {
-        $user = Auth::user();
-        if (!$user) {
-            return [];
-        }
+    protected static ?string $navigationIcon = 'heroicon-o-home';
+    protected static ?string $navigationLabel = 'Dashboard';
+    protected static ?int $navigationSort = 1;
 
-        // Solo admin e manager vedono il Manager Dashboard
-        if ($user->hasRole(['admin', 'manager'])) {
+    public static function canAccess(): bool
+    {
+        // Tutti gli utenti autenticati possono accedere alla dashboard
+        return auth()->check();
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        $user = auth()->user();
+        
+        // User normali vedono solo widget personali
+        if ($user && !$user->hasRole(['admin', 'manager'])) {
             return [
-                \App\Filament\Widgets\ManagerDashboardWidget::class,
+                // Widget user personalizzati
             ];
         }
-
-        // User normale vede solo le proprie statistiche
-        return [];
-    }
-
-    public function getHeaderWidgets(): array
-    {
-        // Nascondiamo completamente AccountWidget e FilamentInfoWidget per tutti
-        return [];
-    }
-
-    public function getFooterWidgets(): array
-    {
-        return [];
+        
+        // Admin/Manager vedono tutti i widget
+        return parent::getHeaderWidgets();
     }
 }

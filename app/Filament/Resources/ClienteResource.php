@@ -16,6 +16,13 @@ use Illuminate\Support\Facades\Auth;
 
 class ClienteResource extends Resource
 {
+
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+        // User normali possono solo visualizzare, admin/manager possono gestire
+        return $user && ($user->hasRole(['admin', 'manager']) || $user->hasRole('user'));
+    }
     protected static ?string $model = Cliente::class;
     protected static ?string $navigationIcon = 'heroicon-o-building-office';
     protected static ?int $navigationSort = 1;

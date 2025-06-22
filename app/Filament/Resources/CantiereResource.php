@@ -13,6 +13,13 @@ use Filament\Tables\Table;
 
 class CantiereResource extends Resource
 {
+
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+        // User normali possono solo visualizzare, admin/manager possono gestire
+        return $user && ($user->hasRole(['admin', 'manager']) || $user->hasRole('user'));
+    }
     protected static ?string $model = Cantiere::class;
     protected static ?string $navigationIcon = 'heroicon-o-map-pin';
     protected static ?int $navigationSort = 2;
