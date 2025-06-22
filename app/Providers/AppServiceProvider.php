@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +20,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Forza l'URL base per gli asset
+        if (config('app.env') === 'production') {
+            URL::forceScheme('http');
+            URL::forceRootUrl(config('app.url'));
+        }
     }
 }

@@ -11,14 +11,14 @@ Route::get('/', function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('/scontrini/{spesa}/download', function (App\Models\Spesa $spesa) {
         abort_unless(auth()->user()->id === $spesa->user_id || auth()->user()->hasRole(['admin', 'manager']), 403);
-        
+
         if (!$spesa->foto_scontrino || !Storage::disk('public')->exists($spesa->foto_scontrino)) {
             abort(404, 'File non trovato');
         }
-        
+
         $extension = pathinfo($spesa->foto_scontrino, PATHINFO_EXTENSION);
         $filename = 'scontrino_' . $spesa->id . '_' . $spesa->mese . '_' . $spesa->anno . '.' . $extension;
-        
+
         return Storage::disk('public')->download($spesa->foto_scontrino, $filename);
     })->name('scontrini.download');
 });
@@ -31,19 +31,19 @@ Route::get('/test-pdf-view', function() {
         ->where('anno', 2025)
         ->whereNotNull('foto_scontrino')
         ->get();
-    
+
     $scontriniConImmagini = $scontrini->map(function ($scontrino) {
         $extension = strtolower(pathinfo($scontrino->foto_scontrino, PATHINFO_EXTENSION));
         $filePath = storage_path('app/public/' . $scontrino->foto_scontrino);
-        
+
         $scontrino->extension = $extension;
         $scontrino->file_exists = file_exists($filePath);
-        
+
         if (in_array($extension, ['jpg', 'jpeg', 'png', 'webp']) && file_exists($filePath)) {
             $imageData = file_get_contents($filePath);
             $mimeType = match($extension) {
                 'jpg', 'jpeg' => 'image/jpeg',
-                'png' => 'image/png', 
+                'png' => 'image/png',
                 'webp' => 'image/webp',
                 default => 'image/jpeg'
             };
@@ -51,10 +51,10 @@ Route::get('/test-pdf-view', function() {
         } else {
             $scontrino->base64_image = null;
         }
-        
+
         return $scontrino;
     });
-    
+
     $dati = [
         'user' => $user,
         'scontrini' => $scontriniConImmagini,
@@ -63,13 +63,12 @@ Route::get('/test-pdf-view', function() {
         'totaleFiles' => $scontrini->count(),
         'dataGenerazione' => now()->format('d/m/Y H:i')
     ];
-    
+
     return view('pdf.scontrini-mensili', $dati);
 });
 
 Route::get("/fatture/{fattura}/pdf", [App\Http\Controllers\FatturaPdfController::class, "viewPdf"])->name("fatture.pdf");
 Route::get("/fatture/{fattura}/download", [App\Http\Controllers\FatturaPdfController::class, "downloadPdf"])->name("fatture.download");
-
 
 Route::get('/api/server-time', function () {
     return response()->json([
@@ -81,3 +80,24 @@ Route::get('/api/server-time', function () {
 Route::get('/test', function() {
     return 'Test OK - PHP funziona';
 });
+
+// Route per download documenti
+Route::get('/documento/download/{id}', function ($id) {
+    $documento = \App\Models\Documento::findOrFail($id);
+    
+    // Verifica permessi
+    if (!auth()->user()->hasRole(['admin', 'manager'])) {
+        if ($documento->documentabile_id !== auth()->id()) {
+            abort(403);
+        }
+    }
+    
+    $path = str_replace('public/', '', $documento->file_path);
+    $fullPath = Storage::disk('public')->path($path);
+    
+    if (!file_exists($fullPath)) {
+        abort(404, 'File non trovato');
+    }
+    
+    return response()->download($fullPath, $documento->file_originale ?? $documento->nome);
+})->middleware('auth')->name('documento.download');
