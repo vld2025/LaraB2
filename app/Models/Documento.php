@@ -36,7 +36,13 @@ class Documento extends Model
         'backup_cloud_completato',
         'ultima_sincronizzazione',
         'metadati',
-        'is_active'
+        'is_active',
+        'categoria_id',
+        'hash_sha256',
+        'file_originale',
+        'data_documento',
+        'importante',
+        'metadata'
     ];
 
     protected $casts = [
@@ -48,7 +54,10 @@ class Documento extends Model
         'backup_cloud_completato' => 'boolean',
         'is_active' => 'boolean',
         'metadati' => 'array',
-        'ultima_sincronizzazione' => 'datetime'
+        'ultima_sincronizzazione' => 'datetime',
+        'importante' => 'boolean',
+        'data_documento' => 'date',
+        'metadata' => 'array'
     ];
 
     // Relazioni
@@ -161,7 +170,7 @@ class Documento extends Model
             return false;
         }
         
-        return $this->hash_file === $this->calcolaHashFile($pathCompleto);
+        return $this->hash_sha256 === $this->calcolaHashFile($pathCompleto);
     }
 
     public function creaNuovaVersione(array $datiNuovaVersione): self
@@ -209,5 +218,17 @@ class Documento extends Model
     public function getFormattedSize(): string
     {
         return $this->dimensione_file_umana;
+    }
+
+    // Relazione con categoria documenti
+    public function categoria()
+    {
+        return $this->belongsTo(\App\Models\CategoriaDocumento::class, 'categoria_id');
+    }
+
+    // Scope per documenti importanti
+    public function scopeImportanti($query)
+    {
+        return $query->where('importante', true);
     }
 }
